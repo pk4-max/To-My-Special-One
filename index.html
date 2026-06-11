@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Happy Birthday | To My Special One</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;600&family=Plus+Jakarta+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .birthday-video-container {
+            position: fixed;
+            z-index: 2; 
+            pointer-events: none; 
+            mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 80%);
+            -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 80%);
+            top: 80%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            max-width: 650px; 
+            height: auto;
+            opacity: 0; 
+            transition: opacity 3s ease-in-out, top 11s cubic-bezier(0.2, 1, 0.3, 1), max-width 5s cubic-bezier(0.2, 1, 0.3, 1);
+        }
+        .video-expanded {
+            top: 50% !important; 
+            max-width: 100vw !important; 
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: contain;
+            mask-image: none !important;
+            -webkit-mask-image: none !important;
+            position: absolute !important;
+        }
+        body {
+            background-color: #E2E2E2; 
+            color: #5A4F51; 
+            overflow: hidden;
+            perspective: 1500px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        img { pointer-events: none; -webkit-user-drag: none; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(166, 124, 124, 0.15); 
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05); 
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+        .luxury-glow { text-shadow: 0 0 15px rgba(166, 124, 124, 0.2); }
+        .card-enter { opacity: 0; transform: translateY(20px) scale(0.99) rotateX(5deg); filter: blur(5px); }
+        .card-active { opacity: 1; transform: translateY(0) scale(1) rotateX(0deg); filter: blur(0); transition: all 1.2s cubic-bezier(0.2, 1, 0.3, 1); }
+        .magic-star { cursor: pointer; animation: starPulse 2s infinite ease-in-out; color: #D4A3A3; }
+        @keyframes starPulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.3); filter: drop-shadow(0 0 8px #D4A3A3); } }
+        #scratch-overlay {
+            position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(15px); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+        #scratch-container {
+            position: relative; width: 300px; height: 400px; border-radius: 32px;
+            overflow: hidden; box-shadow: 0 0 60px rgba(212, 163, 163, 0.4); background: #222;
+        }
+        #scratch-canvas { position: absolute; inset: 0; cursor: crosshair; touch-action: none; z-index: 10; }
+        #hidden-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; }
+        .scratch-debris { position: absolute; width: 4px; height: 4px; background: #A67C7C; pointer-events: none; z-index: 600; border-radius: 1px; }
+        #particle-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; transition: opacity 2s ease-in-out; }
+        .crystal-dust {
+            position: absolute; background: white; border-radius: 50%; pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            animation: drift var(--duration) linear infinite, twinkle var(--twinkle-duration) ease-in-out infinite;
+        }
+        @keyframes drift { 0% { transform: translateY(105vh) translateX(0); opacity: 0; } 15% { opacity: var(--max-opacity); } 85% { opacity: var(--max-opacity); } 100% { transform: translateY(-10vh) translateX(var(--drift-x)); opacity: 0; } }
+        @keyframes twinkle { 0%, 100% { opacity: var(--max-opacity); transform: scale(1); } 50% { opacity: 0.2; transform: scale(0.5); } }
+        .typed-cursor { display: inline-block; width: 1px; height: 1.2em; vertical-align: middle; background-color: #A67C7C; margin-left: 2px; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        
+        /* Visualizer Styles */
+        .visualizer-container { position: fixed; bottom: 30px; left: 30px; display: flex; align-items: flex-end; gap: 3px; height: 30px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 1s; }
+        .v-bar { width: 3px; background: #A67C7C; border-radius: 2px; height: 10%; transition: height 0.1s ease; }
+
+        /* Envelope Styles */
+        #envelope-wrapper { position: fixed; inset: 0; z-index: 150; background: #E2E2E2; display: none; align-items: center; justify-content: center; cursor: pointer; transition: opacity 1s ease; }
+        .envelope { position: relative; width: 320px; height: 200px; background: #ffffff; box-shadow: 0 20px 60px rgba(0,0,0,0.08); transform-style: preserve-3d; transition: transform 0.8s ease; }
+        .envelope:hover { transform: scale(1.02); }
+        .flap { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fdfdfd; clip-path: polygon(0 0, 50% 55%, 100% 0); z-index: 3; transform-origin: top; transition: transform 0.6s ease; border: 1px solid rgba(0,0,0,0.02); }
+        .envelope.open .flap { transform: rotateX(180deg); z-index: 1; }
+        .pocket { position: absolute; inset: 0; background: #ffffff; clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0, 50% 55%); z-index: 3; border: 1px solid rgba(0,0,0,0.02); }
+        .letter { position: absolute; top: 10px; left: 15px; right: 15px; bottom: 10px; background: white; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; color: #A67C7C; transition: transform 0.8s ease; box-shadow: 0 0 15px rgba(0,0,0,0.03); }
+        .envelope.open .letter { transform: translateY(-110px) rotate(-2deg) scale(1.05); z-index: 4; }
+        .seal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: #A67C7C; border-radius: 50%; z-index: 4; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 5px 15px rgba(166, 124, 124, 0.3); transition: opacity 0.3s; }
+        .envelope.open .seal { opacity: 0; }
+
+        input[type="range"] { -webkit-appearance: none; background: rgba(166, 124, 124, 0.1); border-radius: 10px; height: 4px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; background: #A67C7C; width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+        
+        .floating-heart {
+            position: absolute;
+            color: #A67C7C;
+            pointer-events: none;
+            z-index: 1000;
+            animation: float-up 3s ease-out forwards;
+        }
+        @keyframes float-up {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+
+        /* Idea 7: Scrapbook Flip Styles */
+        .polaroid-frame {
+            position: absolute;
+            top: -40px;
+            right: -20px;
+            width: 180px;
+            padding: 10px 10px 30px 10px;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transform: rotate(5deg) translateY(-20px);
+            opacity: 0;
+            z-index: 100;
+            transition: opacity 0.8s cubic-bezier(0.2, 1, 0.3, 1), transform 0.1s ease-out;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        .polaroid-frame:active { cursor: grabbing; }
+        .polaroid-frame img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border: 1px solid rgba(0,0,0,0.05);
+            pointer-events: none;
+        }
+        .polaroid-active {
+            opacity: 1;
+            transform: rotate(-3deg) translateY(0);
+            animation: polaroid-fall 1.2s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+        }
+        @keyframes polaroid-fall {
+            0% { transform: rotate(15deg) translateY(-100px) scale(1.1); opacity: 0; }
+            100% { transform: rotate(-3deg) translateY(0) scale(1); opacity: 1; }
+        }
+        .polaroid-dragging {
+            z-index: 1000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            transition: none !important;
+        }
+        .polaroid-stashed {
+            transform: scale(0.3) rotate(0deg) !important;
+            opacity: 0.8;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+
+        /* Drop Zone Styles */
+        #stash-zone {
+            position: absolute;
+            right: -100px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(166, 124, 124, 0.3);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
+            gap: -40px; /* Overlap effect */
+            transition: all 0.5s ease;
+        }
+        #stash-zone.highlight {
+            background: rgba(166, 124, 124, 0.1);
+            border-color: #A67C7C;
+            transform: translateY(-50%) scale(1.05);
+        }
+        .stash-slot {
+            width: 60px;
+            height: 80px;
+            background: white;
+            border: 1px solid rgba(0,0,0,0.1);
+            margin-bottom: -50px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transform: rotate(var(--r));
+        }
+
+        .scrapbook-flip-enter {
+            opacity: 0;
+            transform: rotateY(-10deg) translateX(50px) scale(0.95);
+            filter: blur(10px);
+        }
+        .scrapbook-flip-active {
+            opacity: 1;
+            transform: rotateY(0deg) translateX(0) scale(1);
+            filter: blur(0);
+            transition: all 1s cubic-bezier(0.2, 1, 0.3, 1);
+        }
+    </style>
+    <script id="tailwind-config">
+      tailwind.config = {
+        theme: {
+          extend: {
+            "colors": { "primary": "#A67C7C", "secondary": "#D4A3A3", "tertiary": "#8E8282", "background": "#E2E2E2" },
+            "fontFamily": { "headline-lg": ["Cormorant Garamond", "serif"], "headline-md": ["Cormorant Garamond", "serif"], "body-lg": ["Cormorant Garamond", "serif"], "body-md": ["Inter", "sans-serif"], "label-sm": ["Plus Jakarta Sans", "sans-serif"] }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background min-h-screen flex flex-col font-body-md text-on-background selection:bg-primary/10 transition-colors duration-1000" onclick="spawnHeart(event)">
+
+    <div id="video-anchor" class="h-screen w-full overflow-hidden relative">
+        <video id="birthday-video" class="birthday-video-container" loop playsinline>
+            <source src="birthday-video.mp4" type="video/mp4">
+        </video>
+
+        <div class="fixed top-6 right-6 z-[200] flex flex-col items-end">
+            <button id="vol-toggle-btn" class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-primary border border-primary/5 hover:scale-105 active:scale-95 transition-all" onclick="toggleVolumePanel()">
+                <span class="material-symbols-outlined text-xl" id="vol-icon">volume_up</span>
+            </button>
+            <div id="volume-panel" class="hidden opacity-0 mt-3 w-64 glass-card rounded-2xl p-5 transition-all duration-300 flex flex-col gap-4 text-left">
+                <div class="flex flex-col gap-2 border-b border-outline-variant pb-3">
+                    <div class="flex justify-between items-center">
+                        <button onclick="toggleMasterMute()" class="flex items-center gap-1.5 text-[10px] font-bold text-primary tracking-[0.1em] uppercase hover:opacity-80 transition-opacity">
+                            <span class="material-symbols-outlined text-xs" id="master-mute-icon">volume_up</span>
+                            <span>Master</span>
+                        </button>
+                        <span id="master-vol-txt" class="font-label-sm text-[10px] text-primary font-bold">100%</span>
+                    </div>
+                    <input type="range" id="master-vol-slider" min="0" max="100" value="100" class="accent-primary" oninput="updateMasterVolume(this.value)"/>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[9px] font-bold text-on-surface-variant uppercase tracking-wider">
+                            <span>Background Music</span><span id="bg-vol-txt" class="text-primary">30%</span>
+                        </div>
+                        <input type="range" id="bg-vol-slider" min="0" max="100" value="30" oninput="updateSubVolume('bg', this.value)"/>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[9px] font-bold text-on-surface-variant uppercase tracking-wider">
+                            <span>Video</span><span id="music-vol-txt" class="text-primary">2%</span>
+                        </div>
+                        <input type="range" id="music-vol-slider" min="0" max="100" value="2" oninput="updateSubVolume('music', this.value)"/>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-[9px] font-bold text-on-surface-variant uppercase tracking-wider">
+                            <span>Typing</span><span id="type-vol-txt" class="text-primary">1%</span>
+                        </div>
+                        <input type="range" id="type-vol-slider" min="0" max="100" value="1" oninput="updateSubVolume('type', this.value)"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visualizer-container" id="visualizer">
+            <div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div>
+        </div>
+
+        <div class="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6 transition-all duration-1000" id="countdown-overlay">
+            <div class="text-center max-w-xl">
+                <h2 class="font-headline-lg text-3xl md:text-4xl text-primary mb-10 tracking-wide luxury-glow" id="countdown-status">🍭 กรุณารออย่างสงบ... จนกว่าเวลามันจะหมดนะจ๊ะ</h2>
+                <div class="flex gap-4 md:gap-8 justify-center mb-16 bg-white/30 px-10 py-8 rounded-[40px] border border-white/50 backdrop-blur-sm" id="timer-display">
+                    <div class="flex flex-col items-center"><span class="text-5xl md:text-6xl font-light text-primary" id="days">00</span><span class="text-[9px] uppercase tracking-[0.3em] text-on-surface-variant font-label-sm mt-3">Days</span></div>
+                    <div class="text-4xl md:text-5xl text-primary/20 font-thin mt-2">:</div>
+                    <div class="flex flex-col items-center"><span class="text-5xl md:text-6xl font-light text-primary" id="hours">00</span><span class="text-[9px] uppercase tracking-[0.3em] text-on-surface-variant font-label-sm mt-3">Hours</span></div>
+                    <div class="text-4xl md:text-5xl text-primary/20 font-thin mt-2">:</div>
+                    <div class="flex flex-col items-center"><span class="text-5xl md:text-6xl font-light text-primary" id="minutes">00</span><span class="text-[9px] uppercase tracking-[0.3em] text-on-surface-variant font-label-sm mt-3">Mins</span></div>
+                    <div class="text-4xl md:text-5xl text-primary/20 font-thin mt-2">:</div>
+                    <div class="flex flex-col items-center"><span class="text-5xl md:text-6xl font-light text-secondary" id="seconds">00</span><span class="text-[9px] uppercase tracking-[0.3em] text-on-surface-variant font-label-sm mt-3">Secs</span></div>
+                </div>
+                <button class="hidden px-16 py-5 bg-primary text-on-primary rounded-full font-label-sm font-bold hover:scale-[1.03] transition-all shadow-xl animate-pulse text-lg tracking-[0.1em]" id="start-btn" onclick="revealEnvelope()">เปิดกล่องของขวัญ 🎁</button>
+            </div>
+        </div>
+
+        <div id="envelope-wrapper" onclick="openEnvelope()">
+            <div class="envelope" id="main-envelope">
+                <div class="flap"></div>
+                <div class="pocket"></div>
+                <div class="letter">
+                    <span class="text-xl">To My Special One</span>
+                    <span class="text-xs mt-2 opacity-50">Click to Open</span>
+                </div>
+                <div class="seal">
+                    <span class="material-symbols-outlined">favorite</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="particle-container"></div>
+
+        <div class="hidden opacity-0 transition-opacity duration-1500 flex flex-col justify-between absolute inset-0 z-[160]" id="main-content-wrapper">
+            <header class="w-full text-center py-10 font-label-sm text-xs tracking-[0.5em] text-primary/60 uppercase font-bold luxury-glow">
+                Happy Birthday
+                <div id="days-together-counter" class="text-[9px] mt-2 opacity-60"></div>
+            </header>
+            <main class="flex-grow flex flex-col items-center justify-center px-6 w-full max-w-[800px] mx-auto">
+                <div class="w-full glass-card rounded-[40px] p-10 md:p-14 relative flex flex-col justify-between card-enter" id="wishes-card" onmousemove="handleCardTilt(event)" onmouseleave="resetCardTilt()">
+                    <!-- Drop Zone for Collected Photos -->
+                    <div id="stash-zone"></div>
+                    
+                    <!-- Polaroid Frame for Idea 7 -->
+                    <div id="polaroid-container" class="polaroid-frame" onmousedown="startDrag(event)" ontouchstart="startDrag(event)">
+                        <img id="polaroid-img" src="" alt="Memory">
+                    </div>
+                    
+                    <div class="absolute top-8 right-8 flex items-center gap-4">
+                        <span class="material-symbols-outlined text-4xl text-primary/10" style="font-variation-settings: 'FILL' 1">favorite</span>
+                    </div>
+                    <div class="w-full">
+                        <div class="font-label-sm text-[9px] text-tertiary font-bold mb-6 tracking-[0.3em] uppercase bg-white/40 border border-white/60 rounded-full py-1.5 px-4 inline-block" id="card-number">MEMORY 01</div>
+                        <h2 class="font-headline-md text-3xl md:text-4xl text-primary mb-8 tracking-wide luxury-glow" id="card-title">-</h2>
+                        <div class="font-headline-md text-xl md:text-2xl text-on-background leading-relaxed font-medium italic opacity-90" id="card-text-container">
+                            <span id="card-text" class="whitespace-pre-wrap break-words"></span><span class="typed-cursor" id="cursor"></span>
+                        </div>
+                    </div>
+                    <div class="flex justify-center gap-3 mt-12" id="dots-container"></div>
+                </div>
+                <div id="controls-area" class="flex gap-4 mt-8 w-full max-w-[500px]">
+                    <button class="flex-1 py-4 bg-white/40 border border-white/60 rounded-2xl font-label-sm font-bold hover:bg-white/60 transition-all active:scale-98 disabled:opacity-20 text-xs tracking-widest" id="prev-btn" onclick="changeCard(-1)">Back</button>
+                    <button class="flex-[2] py-4 bg-primary text-on-primary rounded-2xl font-label-sm font-bold hover:scale-[1.02] transition-all active:scale-98 shadow-xl disabled:opacity-20 text-xs tracking-[0.2em]" id="next-btn" onclick="handleNextClick()">Next ❤</button>
+                </div>
+            </main>
+            <footer class="w-full text-center py-8 font-label-sm text-[10px] text-on-surface-variant/40 tracking-[0.3em] font-bold uppercase">Forever & Always 🧸</footer>
+        </div>
+    </div>
+
+    <div id="gallery-section" class="min-h-screen w-full bg-[#E2E2E2] px-6 py-24 flex flex-col items-center relative z-20 hidden opacity-0 transition-opacity duration-2000">
+        <h2 class="font-headline-lg text-4xl md:text-5xl text-primary text-center mb-4 luxury-glow">Memory Collection</h2>
+        <p class="font-label-sm text-[10px] tracking-[0.4em] text-on-surface-variant/60 uppercase text-center mb-16">ความทรงจำที่คุณปลดล็อกมาได้</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12 max-w-4xl w-full" id="gallery-grid"></div>
+        <footer class="mt-32 font-label-sm text-[9px] text-on-surface-variant/30 tracking-[0.5em] uppercase text-center">You are my greatest adventure 🧸</footer>
+    </div>
+
+    <script>
+        // Global variables first
+        const wishesData = [
+            { 
+                title: "To My Special One", 
+                text: "สุขสันต์วันเกิดครับ ผมไม่รู้จะเริ่มต้นตรงไหนดี เพราะทุกอย่างเกี่ยวกับคุณมีความหมายกับผมมาก คุณเข้ามาในชีวิตผมและเปลี่ยนแปลงอะไรหลายๆอย่าง การอยู่กับคุณทำให้วันธรรมดาๆของผมรู้สึกพิเศษ ถึงจะเจอวันที่ลำบากก็รู้สึกง่ายขึ้นที่มีคุณ", 
+                imageUrl: "image1.jpg", 
+                isUnlocked: false 
+            },
+            { title: "To My Special One", text: "ขอบคุณที่เป็นคุณ ขอบคุณสำหรับความใจดี ความอดทน ความอบอุ่น ผมรู้สึกขอบคุณทุกช่วงเวลาเล็กๆที่เราแบ่งปันกัน ทุกเสียงหัวเราะ ทุกบทสนทนา", imageUrl: "image2.jpg", isUnlocked: false },
+            { title: "To My Special One", text: "ในวันเกิดของคุณ ผมแค่อยากให้คุณรู้ว่าผมรักคุณมากแค่ไหน ผมหวังว่าปีนี้จะนำพาความสุข การเติบโต และทุกสิ่งที่คุณต้องการมาให้ และไม่ว่าจะเกิดอะไรขึ้น ผมจะอยู่ตรงนี้คอยรักคุณ สนับสนุนคุณ และเลือกคุณไม่ว่าจะเกิดอะไรขึ้น", imageUrl: "image3.jpg", isUnlocked: false },
+            { title: "To My Special One", text: "ผมไม่ได้รักคุณเพียงเพราะคุณเป็นใครในวันนี้ แต่ผมรักคุณเพราะคุณกำลังจะเป็นใครในอนาคต และผมรู้สึกโชคดีมากที่ได้เป็นส่วนหนึ่งในการเติบโตของคุณ", imageUrl: "image4.jpg", isUnlocked: false },
+            { title: "To My Special One", text: "สุขสันต์วันเกิดครับ", imageUrl: "image5.jpg", isUnlocked: false }
+        ];
+
+        let currentCardIndex = 0, typewriterTimeout = null, isTyping = false, isScratching = false, isOverlayOpen = false, hasStartedScratching = false, isEnvelopeOpening = false;
+        let masterVolume = 1.0, preMuteMasterVolume = 1.0, volumes = { music: 0.02, type: 0.01, scratch: 0.4, click: 0.5, bg: 0.3 };
+        let draggedElement = null, dragStartX = 0, dragStartY = 0, elementStartX = 0, elementStartY = 0;
+        let collectedPhotos = [];
+        let timerInterval = null;
+
+        // Core assets
+        const unlockAudio = new Audio('lock-sound.mp3'), clickAudio = new Audio('click-sound.mp3'), typeAudio = new Audio('typing-sound.mp3');
+        const bgMusic = new Audio('Paul Partohap - PS I LOVE YOU Lyric Video.mp3');
+        bgMusic.loop = true;
+
+        // --- Functions ---
+
+        function updateGallery() {
+            const grid = document.getElementById('gallery-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            wishesData.forEach((item, index) => {
+                const card = document.createElement('div'); card.className = "flex flex-col gap-5 group text-center";
+                const frame = document.createElement('div'); frame.className = `aspect-[3/4] rounded-[40px] overflow-hidden border border-primary/10 bg-white/40 shadow-xl transition-all duration-1000 ${item.isUnlocked ? 'scale-100' : 'scale-95 grayscale opacity-40'}`;
+                frame.innerHTML = item.isUnlocked ? `<img src="${item.imageUrl}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000">` : `<div class="w-full h-full flex flex-col items-center justify-center text-primary/10"><span class="material-symbols-outlined text-6xl mb-4 font-light">lock</span><span class="text-[10px] font-bold tracking-[0.4em] uppercase font-label-sm">Locked</span></div>`;
+                card.innerHTML = `<div class="font-label-sm text-[9px] text-primary/30 font-bold tracking-[0.3em] uppercase mb-2">Memory 0${index+1}</div><div class="font-headline-md text-xl text-primary luxury-glow">${item.isUnlocked ? item.title : 'ความทรงจำที่ซ่อนอยู่'}</div>`;
+                card.prepend(frame); grid.appendChild(card);
+            });
+        }
+
+        function calculateDaysTogether() {
+            const anniversary = new Date('2026-01-15');
+            const now = new Date();
+            const diff = now - anniversary;
+            return Math.floor(diff / (1000 * 60 * 60 * 24));
+        }
+
+        function updateDaysCounter() {
+            const days = calculateDaysTogether();
+            const counterEl = document.getElementById('days-together-counter');
+            if (counterEl) counterEl.innerText = `${days} Days Together`;
+        }
+
+        function applyAllVolumes() {
+            const birthdayVideo = document.getElementById('birthday-video');
+            if(birthdayVideo) birthdayVideo.volume = volumes.music * masterVolume;
+            typeAudio.volume = volumes.type * masterVolume;
+            clickAudio.volume = volumes.click * masterVolume;
+            unlockAudio.volume = Math.min(volumes.click * masterVolume + 0.3, 1.0);
+            bgMusic.volume = volumes.bg * masterVolume;
+        }
+
+        function getTargetDate() { 
+            const now = new Date(), y = now.getFullYear(); 
+            let t = new Date(`${y}-06-12T00:00:00+07:00`); 
+            if(now > t) t = new Date(`${y+1}-06-12T00:00:00+07:00`); 
+            return t; 
+        }
+
+        function updateCountdown() { 
+            const targetDate = getTargetDate();
+            const diff = targetDate - new Date(); 
+            if(diff <= 0) { 
+                document.getElementById('countdown-status').innerText = "สุขสันต์วันเกิด นี่คือสิ่งที่ผมอยากจะบอกคุณ 🧸"; 
+                document.getElementById('timer-display').classList.add('hidden'); 
+                document.getElementById('start-btn').classList.remove('hidden'); 
+                return true; 
+            }
+            document.getElementById('days').innerText = String(Math.floor(diff/86400000)).padStart(2,'0'); 
+            document.getElementById('hours').innerText = String(Math.floor((diff/3600000)%24)).padStart(2,'0'); 
+            document.getElementById('minutes').innerText = String(Math.floor((diff/60000)%60)).padStart(2,'0'); 
+            document.getElementById('seconds').innerText = String(Math.floor((diff/1000)%60)).padStart(2,'0'); 
+            return false; 
+        }
+
+        function revealEnvelope() {
+            document.getElementById('countdown-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('countdown-overlay').classList.add('hidden');
+                document.getElementById('envelope-wrapper').style.display = 'flex';
+            }, 1000);
+        }
+
+        function openEnvelope() {
+            if (isEnvelopeOpening) return;
+            isEnvelopeOpening = true;
+            const env = document.getElementById('main-envelope');
+            const wrapper = document.getElementById('envelope-wrapper');
+            env.classList.add('open');
+            playButtonClickSound();
+            setTimeout(() => {
+                wrapper.style.pointerEvents = 'none';
+                wrapper.style.opacity = '0';
+                setTimeout(() => {
+                    wrapper.style.display = 'none';
+                    transitionToContent();
+                }, 1000);
+            }, 2000); 
+        }
+
+        function transitionToContent() {
+            playUnlockSound(); 
+            bgMusic.volume = volumes.bg * masterVolume;
+            bgMusic.play().catch(() => {});
+            updateDaysCounter();
+            const birthdayVideo = document.getElementById('birthday-video');
+            if(birthdayVideo){ 
+                birthdayVideo.volume = volumes.music*masterVolume; 
+                birthdayVideo.play(); 
+                birthdayVideo.style.opacity='1'; 
+                startVisualizer(); 
+            } 
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#A67C7C', '#D4A3A3', '#ffffff'] });
+            const mainContent = document.getElementById('main-content-wrapper');
+            mainContent.classList.remove('hidden'); 
+            initParticles(); 
+            updateGallery(); 
+            renderCard(); 
+            setTimeout(() => { mainContent.style.opacity = '1'; }, 50);
+        }
+
+        function playUnlockSound() { unlockAudio.currentTime = 0; unlockAudio.play().catch(()=>{}); }
+        function playButtonClickSound() { clickAudio.currentTime=0; clickAudio.play().catch(()=>{}); }
+
+        // --- Volume Controls ---
+        window.updateMasterVolume = function(v) {
+            masterVolume = v/100;
+            const txt = document.getElementById('master-vol-txt');
+            if (txt) txt.innerText = v+'%';
+            applyAllVolumes();
+        };
+
+        window.updateSubVolume = function(t, v) {
+            volumes[t] = v/100;
+            const txt = document.getElementById(`${t}-vol-txt`);
+            if (txt) txt.innerText = v+'%';
+            applyAllVolumes();
+        };
+
+        window.toggleMasterMute = function() {
+            const s = document.getElementById('master-vol-slider');
+            if(masterVolume > 0) {
+                preMuteMasterVolume = masterVolume;
+                window.updateMasterVolume(0);
+                if (s) s.value = 0;
+            } else {
+                const newVal = Math.round(preMuteMasterVolume*100)||100;
+                window.updateMasterVolume(newVal);
+                if (s) s.value = newVal;
+            }
+        };
+
+        window.toggleVolumePanel = function() {
+            const p = document.getElementById('volume-panel');
+            if(!p) return;
+            if(p.classList.contains('hidden')) {
+                p.classList.remove('hidden');
+                setTimeout(()=>p.classList.replace('opacity-0','opacity-100'),10);
+            } else {
+                p.classList.replace('opacity-100','opacity-0');
+                setTimeout(()=>p.classList.add('hidden'),300);
+            }
+        };
+
+        let startMouseX = 0, startMouseY = 0, initialElementLeft = 0, initialElementTop = 0;
+
+        // --- Drag/Drop ---
+        function startDrag(e) {
+            if (isTyping) return;
+            draggedElement = document.getElementById('polaroid-container');
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            
+            // Capture initial positions
+            startMouseX = clientX;
+            startMouseY = clientY;
+            
+            // Get current computed position relative to offsetParent
+            const style = window.getComputedStyle(draggedElement);
+            initialElementLeft = parseFloat(style.left);
+            initialElementTop = parseFloat(style.top);
+
+            draggedElement.classList.add('polaroid-dragging');
+            draggedElement.style.transition = 'none'; // Instant response while dragging
+            
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('touchmove', onDrag, { passive: false });
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!draggedElement) return;
+            e.preventDefault();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            
+            // Calculate how much the mouse has moved
+            const dx = clientX - startMouseX;
+            const dy = clientY - startMouseY;
+            
+            // Apply that movement to the initial position
+            draggedElement.style.left = (initialElementLeft + dx) + 'px';
+            draggedElement.style.top = (initialElementTop + dy) + 'px';
+            draggedElement.style.right = 'auto'; // Break the CSS 'right' property
+            draggedElement.style.transform = 'rotate(-3deg) scale(1.05)';
+
+            const stashZone = document.getElementById('stash-zone');
+            const stashRect = stashZone.getBoundingClientRect();
+            if (clientX > stashRect.left && clientX < stashRect.right && clientY > stashRect.top && clientY < stashRect.bottom) stashZone.classList.add('highlight');
+            else stashZone.classList.remove('highlight');
+        }
+
+        function stopDrag(e) {
+            if (!draggedElement) return;
+            const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+            const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+            const stashZone = document.getElementById('stash-zone');
+            const stashRect = stashZone.getBoundingClientRect();
+            if (clientX > stashRect.left && clientX < stashRect.right && clientY > stashRect.top && clientY < stashRect.bottom) stashPhoto();
+            else {
+                draggedElement.style.transition = 'all 0.5s cubic-bezier(0.2, 1, 0.3, 1)';
+                draggedElement.style.left = ''; draggedElement.style.top = ''; draggedElement.style.right = '';
+                setTimeout(() => { draggedElement.style.transition = ''; }, 500);
+            }
+            draggedElement.classList.remove('polaroid-dragging');
+            stashZone.classList.remove('highlight');
+            draggedElement = null;
+            document.removeEventListener('mousemove', onDrag); document.removeEventListener('touchmove', onDrag);
+            document.removeEventListener('mouseup', stopDrag); document.removeEventListener('touchend', stopDrag);
+        }
+
+        function stashPhoto() {
+            const data = wishesData[currentCardIndex];
+            const photoUrl = data.imageUrl;
+            if (collectedPhotos.includes(photoUrl)) return;
+            
+            collectedPhotos.push(photoUrl);
+            playUnlockSound();
+            
+            const stashZone = document.getElementById('stash-zone');
+            const p = document.getElementById('polaroid-container');
+            
+            // Create a permanent slot in the stash zone
+            const slot = document.createElement('div');
+            slot.className = 'stash-slot';
+            slot.style.setProperty('--r', (Math.random() * 20 - 10) + 'deg');
+            slot.innerHTML = `<img src="${photoUrl}" class="w-full h-full object-cover">`;
+            stashZone.appendChild(slot);
+
+            // IMMEDIATELY remove/hide the original polaroid so it doesn't linger
+            p.style.transition = 'all 0.3s ease-out'; // Faster fade
+            p.style.opacity = '0';
+            p.style.transform = 'scale(0) rotate(30deg)'; // Shrink to nothing
+            p.style.pointerEvents = 'none';
+            p.classList.remove('polaroid-active'); // Kill the active animation state
+            
+            wishesData[currentCardIndex].isUnlocked = true;
+            updateGallery();
+            confetti({ particleCount: 40, spread: 50, origin: { x: 0.8, y: 0.5 }, colors: ['#A67C7C', '#ffffff'] });
+        }
+
+        function typeWriter(t, i, cb) { 
+            if(i < t.length) { 
+                document.getElementById('card-text').innerText += t[i]; 
+                if(t[i]!==' ' && t[i]!=='\n'){ 
+                    typeAudio.currentTime=0; 
+                    typeAudio.play().catch(()=>{}); 
+                } 
+                typewriterTimeout = setTimeout(()=>typeWriter(t, i+1, cb), 50); 
+            } else { 
+                document.getElementById('cursor').style.display='none'; 
+                isTyping=false; 
+                if(cb) cb(); 
+            } 
+        }
+
+        function renderCard() {
+            const data = wishesData[currentCardIndex], card = document.getElementById('wishes-card');
+            const polaroid = document.getElementById('polaroid-container'), polaroidImg = document.getElementById('polaroid-img');
+            if(typewriterTimeout) clearTimeout(typewriterTimeout);
+            document.getElementById('card-text').innerText = ''; 
+            document.getElementById('cursor').style.display = 'inline-block';
+            document.getElementById('next-btn').disabled = true; document.getElementById('prev-btn').disabled = true;
+            isTyping = true;
+            card.classList.remove('scrapbook-flip-active', 'card-active'); card.classList.add('scrapbook-flip-enter');
+            
+            // Reset Polaroid state for new card
+            polaroid.classList.remove('polaroid-active', 'polaroid-stashed');
+            polaroid.style.left = ''; 
+            polaroid.style.top = ''; 
+            polaroid.style.right = '';
+            polaroid.style.opacity = '0';
+            polaroid.style.transform = '';
+            polaroid.style.pointerEvents = 'auto'; // Re-enable interaction
+            
+            setTimeout(() => { 
+                document.getElementById('card-number').innerText = `MEMORY 0${currentCardIndex+1} / 0${wishesData.length}`; 
+                document.getElementById('card-title').innerText = data.title; 
+                document.getElementById('next-btn').innerText = (currentCardIndex === wishesData.length - 1) ? "Finish ❤" : "Next ❤"; 
+                polaroidImg.src = data.imageUrl;
+                createDots(); 
+                card.classList.remove('scrapbook-flip-enter', 'card-enter'); card.classList.add('scrapbook-flip-active'); 
+                if (!collectedPhotos.includes(data.imageUrl)) {
+                    setTimeout(() => { 
+                        polaroid.classList.add('polaroid-active'); 
+                        polaroid.style.opacity = '1';
+                    }, 400);
+                }
+                setTimeout(() => typeWriter(data.text, 0, () => { 
+                    document.getElementById('next-btn').disabled = false; 
+                    document.getElementById('prev-btn').disabled = (currentCardIndex === 0); 
+                }), 600); 
+            }, 400);
+        }
+
+        function changeCard(d) { if(!isTyping) { playButtonClickSound(); let n = currentCardIndex+d; if(n>=0 && n<wishesData.length) { currentCardIndex=n; renderCard(); } } }
+        function createDots() { const c = document.getElementById('dots-container'); c.innerHTML=''; wishesData.forEach((_,i)=> { const d = document.createElement('div'); d.className = `h-1 rounded-full transition-all duration-700 ${i===currentCardIndex ? 'w-8 bg-primary':'w-2 bg-primary/10'}`; c.appendChild(d); }); }
+        function initParticles() { const c = document.getElementById('particle-container'); setInterval(() => { if(document.hidden) return; const p = document.createElement('div'); p.className = 'crystal-dust'; const size = Math.random()*3+1, dur = Math.random()*5+10; p.style.width = p.style.height = size+'px'; p.style.left = Math.random()*100+'vw'; p.style.setProperty('--duration', dur+'s'); p.style.setProperty('--twinkle-duration', (Math.random()*2+1)+'s'); p.style.setProperty('--max-opacity', Math.random()*0.5+0.3); p.style.setProperty('--drift-x', (Math.random()-0.5)*100+'px'); c.appendChild(p); setTimeout(()=>p.remove(), dur*1000); }, 300); }
+        function handleCardTilt(e) { const card = document.getElementById('wishes-card'), rect = card.getBoundingClientRect(); const x = 15 * ((e.clientY - rect.top - rect.height/2) / rect.height), y = -15 * ((e.clientX - rect.left - rect.width/2) / rect.width); card.style.transform = `perspective(1000px) rotateX(${x}deg) rotateY(${y}deg) scale3d(1.02, 1.02, 1.02)`; }
+        function resetCardTilt() { document.getElementById('wishes-card').style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`; }
+        function startVisualizer() { document.getElementById('visualizer').style.opacity = '1'; const bars = document.querySelectorAll('.v-bar'); setInterval(() => { bars.forEach(bar => { bar.style.height = (Math.random() * 90 + 10) + '%'; }); }, 100); }
+        function spawnHeart(e) { const heart = document.createElement('span'); heart.className = 'material-symbols-outlined floating-heart'; heart.innerText = 'favorite'; heart.style.left = (e.clientX - 10) + 'px'; heart.style.top = (e.clientY - 10) + 'px'; document.body.appendChild(heart); setTimeout(() => heart.remove(), 3000); }
+        function handleNextClick() { playButtonClickSound(); if(currentCardIndex === wishesData.length - 1) triggerVideoFullScreen(); else changeCard(1); }
+        function triggerVideoFullScreen() { 
+            document.getElementById('main-content-wrapper').style.opacity='0'; 
+            const slots = document.querySelectorAll('.stash-slot');
+            slots.forEach((slot, i) => { setTimeout(() => { slot.style.position = 'fixed'; slot.style.zIndex = '1000'; slot.style.transition = 'all 1.5s cubic-bezier(0.2, 1, 0.3, 1)'; slot.style.left = '50vw'; slot.style.top = '120vh'; slot.style.transform = 'scale(2) rotate(720deg)'; slot.style.opacity = '0'; }, i * 200); });
+            setTimeout(()=>document.getElementById('main-content-wrapper').classList.add('hidden'),3000); 
+            const birthdayVideo = document.getElementById('birthday-video');
+            if(birthdayVideo) birthdayVideo.classList.add('video-expanded'); 
+            document.body.style.overflow='auto'; document.body.style.overflowX='hidden'; 
+            document.getElementById('gallery-section').classList.remove('hidden'); 
+            setTimeout(()=>document.getElementById('gallery-section').style.opacity='1',1500); 
+        }
+
+        // --- Bypass Command ---
+        window.skipTimer = function() {
+            if (timerInterval) clearInterval(timerInterval);
+            revealEnvelope();
+            console.log("Timer bypassed successfully.");
+        };
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCountdown();
+            updateGallery();
+            applyAllVolumes();
+            timerInterval = setInterval(updateCountdown, 1000);
+            
+            window.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'b') window.skipTimer();
+            });
+        });
+    </script>
+</body>
+</html>
